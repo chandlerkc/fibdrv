@@ -14,7 +14,12 @@ MODULE_DESCRIPTION("Fibonacci engine driver");
 MODULE_VERSION("0.1");
 
 #define DEV_FIBONACCI_NAME "fibonacci"
-
+#define SWAP(a, b) \
+    do {           \
+        a ^= b;    \
+        b ^= a;    \
+        a ^= b;    \
+    } while (0)
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
@@ -67,7 +72,6 @@ static ssize_t fib_read(struct file *file,
     // strncpy(buf, "hello word", size);
     unsigned __int128 ret = fib_sequence(*offset);
     int cnt = 0;
-    char tmp[MAX_BUF_SIZE];
     if (ret == 0) {
         buf[0] = 0 + '0';
         buf[1] = '\0';
@@ -77,12 +81,11 @@ static ssize_t fib_read(struct file *file,
         unsigned int a = ret % 10;
         char c = a + '0';
         ret /= 10;
-        tmp[cnt] = c;
+        buf[cnt] = c;
         cnt++;
     }
-    tmp[cnt] = '\0';
-    for (int i = 0; i < cnt; i++) {
-        buf[i] = tmp[cnt - 1 - i];
+    for (int i = 0; i < cnt / 2; i++) {
+        SWAP(buf[i], buf[cnt - 1 - i]);
     }
     buf[cnt] = '\0';
 
