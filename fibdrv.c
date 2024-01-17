@@ -30,22 +30,30 @@ static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 static int major = 0, minor = 0;
 
-static unsigned __int128 fib_sequence(long long k)
+static unsigned __int128 fib_sequence(long long n)
 {
-    if (k == 0)
+    if (n == 0)
         return 0;
-    else if (k == 1)
-        return 1;
-    unsigned __int128 pre1 = 1;
-    unsigned __int128 pre2 = 0;
-    unsigned __int128 cur = 0;
-    for (int i = 2; i <= k; i++) {
-        cur = pre1 + pre2;
-        pre2 = pre1;
-        pre1 = cur;
+    unsigned int h = (sizeof(n) << 3) - __builtin_ctz(n);
+
+    __int128 a = 0;  // F(0) = 0
+    __int128 b = 1;  // F(1) = 1
+    for (int j = h - 1; j >= 0; --j) {
+        // n_j = floor(n / 2^j) = n >> j, k = floor(n_j / 2), (n_j = n when j =
+        // 0) then a = F(k), b = F(k+1) now.
+        __int128 c = a * (2 * b - a);  // F(2k) = F(k) * [ 2 * F(k+1) – F(k) ]
+        __int128 d = a * a + b * b;    // F(2k+1) = F(k)^2 + F(k+1)^2
+
+        if ((n >> j) & 1) {  // n_j is odd: k = (n_j-1)/2 => n_j = 2k + 1
+            a = d;           //   F(n_j) = F(2k+1)
+            b = c + d;       //   F(n_j + 1) = F(2k + 2) = F(2k) + F(2k+1)
+        } else {             // n_j is even: k = n_j/2 => n_j = 2k
+            a = c;           //   F(n_j) = F(2k)
+            b = d;           //   F(n_j + 1) = F(2k + 1)
+        }
     }
 
-    return cur;
+    return a;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
