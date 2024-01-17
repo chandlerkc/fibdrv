@@ -27,17 +27,20 @@ static int major = 0, minor = 0;
 
 static long long fib_sequence(long long k)
 {
-    /* FIXME: C99 variable-length array (VLA) is not allowed in Linux kernel. */
-    long long f[k + 2];
-
-    f[0] = 0;
-    f[1] = 1;
-
+    if (k == 0)
+        return 0;
+    else if (k == 1)
+        return 1;
+    long long pre1 = 1;
+    long long pre2 = 0;
+    long long cur = 0;
     for (int i = 2; i <= k; i++) {
-        f[i] = f[i - 1] + f[i - 2];
+        cur = pre1 + pre2;
+        pre2 = pre1;
+        pre1 = cur;
     }
 
-    return f[k];
+    return cur;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
