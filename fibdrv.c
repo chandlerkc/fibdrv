@@ -18,22 +18,22 @@ MODULE_VERSION("0.1");
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
-#define MAX_LENGTH 92
-
+#define MAX_LENGTH 100
+#define MAX_BUF_SIZE 100
 static dev_t fib_dev = 0;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 static int major = 0, minor = 0;
 
-static long long fib_sequence(long long k)
+static unsigned __int128 fib_sequence(long long k)
 {
     if (k == 0)
         return 0;
     else if (k == 1)
         return 1;
-    long long pre1 = 1;
-    long long pre2 = 0;
-    long long cur = 0;
+    unsigned __int128 pre1 = 1;
+    unsigned __int128 pre2 = 0;
+    unsigned __int128 cur = 0;
     for (int i = 2; i <= k; i++) {
         cur = pre1 + pre2;
         pre2 = pre1;
@@ -64,7 +64,29 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_sequence(*offset);
+    // strncpy(buf, "hello word", size);
+    unsigned __int128 ret = fib_sequence(*offset);
+    int cnt = 0;
+    char tmp[MAX_BUF_SIZE];
+    if (ret == 0) {
+        buf[0] = 0 + '0';
+        buf[1] = '\0';
+        return 1;
+    }
+    while (ret > 0) {
+        unsigned int a = ret % 10;
+        char c = a + '0';
+        ret /= 10;
+        tmp[cnt] = c;
+        cnt++;
+    }
+    tmp[cnt] = '\0';
+    for (int i = 0; i < cnt; i++) {
+        buf[i] = tmp[cnt - 1 - i];
+    }
+    buf[cnt] = '\0';
+
+    return cnt;
 }
 
 /* write operation is skipped */
