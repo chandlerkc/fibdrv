@@ -35,7 +35,7 @@ static unsigned __int128 fib_sequence(long long n)
     kt = ktime_get();
     unsigned __int128 pre1 = 1;
     unsigned __int128 pre2 = 0;
-    unsigned __int128 cur = 0;
+    unsigned __int128 cur;
     if (n == 0) {
         cur = 0;
         goto end;
@@ -45,7 +45,6 @@ static unsigned __int128 fib_sequence(long long n)
     }
 
     for (int i = 2; i <= n; i++) {
-        cur = pre1 + pre2;
         cur = pre1 + pre2;
         pre2 = pre1;
         pre1 = cur;
