@@ -29,15 +29,18 @@ static dev_t fib_dev = 0;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 static int major = 0, minor = 0;
-
+static ktime_t kt;
 static unsigned __int128 fib_sequence(long long n)
 {
-    if (n == 0)
-        return 0;
-    unsigned int h = (sizeof(n) << 3) - __builtin_ctz(n);
-
+    kt = ktime_get();
     __int128 a = 0;  // F(0) = 0
     __int128 b = 1;  // F(1) = 1
+
+    if (n == 0)
+        goto end;
+
+    unsigned int h = (sizeof(n) << 3) - __builtin_ctz(n);
+
     for (int j = h - 1; j >= 0; --j) {
         // n_j = floor(n / 2^j) = n >> j, k = floor(n_j / 2), (n_j = n when j =
         // 0) then a = F(k), b = F(k+1) now.
@@ -52,7 +55,8 @@ static unsigned __int128 fib_sequence(long long n)
             b = d;           //   F(n_j + 1) = F(2k + 1)
         }
     }
-
+end:
+    kt = ktime_sub(ktime_get(), kt);
     return a;
 }
 
@@ -106,7 +110,7 @@ static ssize_t fib_write(struct file *file,
                          size_t size,
                          loff_t *offset)
 {
-    return 1;
+    return ktime_to_ns(kt);
 }
 
 static loff_t fib_device_lseek(struct file *file, loff_t offset, int orig)
