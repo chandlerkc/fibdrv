@@ -33,31 +33,26 @@ static ktime_t kt;
 static unsigned __int128 fib_sequence(long long n)
 {
     kt = ktime_get();
-    __int128 a = 0;  // F(0) = 0
-    __int128 b = 1;  // F(1) = 1
-
-    if (n == 0)
+    unsigned __int128 pre1 = 1;
+    unsigned __int128 pre2 = 0;
+    unsigned __int128 cur = 0;
+    if (n == 0) {
+        cur = 0;
         goto end;
+    } else if (n == 1) {
+        cur = 1;
+        goto end;
+    }
 
-    unsigned int h = (sizeof(n) << 3) - __builtin_ctz(n);
-
-    for (int j = h - 1; j >= 0; --j) {
-        // n_j = floor(n / 2^j) = n >> j, k = floor(n_j / 2), (n_j = n when j =
-        // 0) then a = F(k), b = F(k+1) now.
-        __int128 c = a * (2 * b - a);  // F(2k) = F(k) * [ 2 * F(k+1) – F(k) ]
-        __int128 d = a * a + b * b;    // F(2k+1) = F(k)^2 + F(k+1)^2
-
-        if ((n >> j) & 1) {  // n_j is odd: k = (n_j-1)/2 => n_j = 2k + 1
-            a = d;           //   F(n_j) = F(2k+1)
-            b = c + d;       //   F(n_j + 1) = F(2k + 2) = F(2k) + F(2k+1)
-        } else {             // n_j is even: k = n_j/2 => n_j = 2k
-            a = c;           //   F(n_j) = F(2k)
-            b = d;           //   F(n_j + 1) = F(2k + 1)
-        }
+    for (int i = 2; i <= n; i++) {
+        cur = pre1 + pre2;
+        cur = pre1 + pre2;
+        pre2 = pre1;
+        pre1 = cur;
     }
 end:
     kt = ktime_sub(ktime_get(), kt);
-    return a;
+    return cur;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
